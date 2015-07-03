@@ -9,8 +9,8 @@
 			<div id="map-canvas"></div>
 		</div>
 	</div>
-	<div id="control-panel" class="col-sm-4 col-lg-3 clearfix">
-		<div class="col-xs-6 col-sm-12">
+	<div class="col-sm-4 col-lg-3 clearfix">
+		<div id="selection-panel" class="col-xs-6 col-sm-12">
 			<div class="panel panel-default">
 				<div class="panel-body">
 					<div>
@@ -43,26 +43,25 @@
 				</div>
 			</div>
 		</div>
-		<div class="col-xs-6 col-sm-12">
+		<div id="itinerary-panel" class="col-xs-6 col-sm-12">
 			<h3>
 				<span id="day-title">
 					<span>Day 1</span>
-					<button class="btn btn-xs btn-danger remove btn-circle">x</button>
+					<button id='remove-day' class="btn btn-xs btn-danger remove btn-circle">x</button>
 				</span>
 			</h3>
 			<div class="panel panel-default">
 				<div class="panel-heading">
-					<div class="day-buttons">
+					<div id='days' class="day-buttons">
 						<button class="btn btn-circle day-btn current-day">1</button>
-						<button class="btn btn-circle day-btn">+</button>
+						<button id='add-day' class="btn btn-circle day-btn">+</button>
 					</div>
 				</div>
-				<div class="panel-body">
+				<div id='itinerary' class="panel-body">
 					<div>
 						<h4>My Hotel</h4>
 						<ul class="list-group">
-							<div id='hotels' class="itinerary-item">
-
+							<div id='hotel' class="itinerary-item">
 							</div>
 						</ul>
 					</div>
@@ -70,7 +69,6 @@
 						<h4>My Restaurants</h4>
 						<ul class="list-group">
 							<div id='restaurants' class="itinerary-item">
-
 							</div>
 						</ul>
 					</div>
@@ -78,7 +76,6 @@
 						<h4>My Things To Do</h4>
 						<ul class="list-group">
 							<div id='thingstodo' class="itinerary-item">
-
 							</div>
 						</ul>
 					</div>

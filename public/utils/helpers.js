@@ -5,7 +5,7 @@ function initialize_gmaps() {
     // set the map options hash
     var mapOptions = {
         center: myLatlng,
-        zoom: 13,
+        zoom: 14,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
         styles: styleArr
     };
@@ -152,19 +152,170 @@ var styleArr = [
   Add a day
   Remove a day
   Switch days
-
-
 */
 
-$(document).ready(function() {
-  initialize_gmaps();
-
-  $('#control-panel').on('click', 'button', function () {
-    var category = $(this).siblings("h4").text().toLowerCase().split(' ').join('');
-    var value = $(this).siblings()[1].value
-
-    var newLi = '<span class="title">' + value + '</span><button class="btn btn-xs btn-danger remove btn-circle">x</button>'
-    $('.panel-body #' + category).append(newLi)
+function render(itinerary, currentDay) {
+  $('#itinerary span').each(function() {
+    $(this).remove()
   })
+  $('#itinerary button').each(function() {
+    $(this).remove()
+  })
+  var dailyItinerary = itinerary[currentDay]
+
+  for (var category in dailyItinerary) {
+    switch (category) {
+      case 'hotel':
+        $('.panel-body #hotel').append(
+          '<span class="title">' + dailyItinerary.hotel + '</span><button class="btn btn-xs btn-danger remove btn-circle">x</button>'
+        )
+        break
+      case 'restaurants':
+        dailyItinerary.restaurants.forEach(function(restaurant) {
+          $('.panel-body #restaurants').append(
+            '<span class="title">' + restaurant + '</span><button class="btn btn-xs btn-danger remove btn-circle">x</button>'
+          )
+        })
+        break
+      case 'thingstodo':
+        dailyItinerary.thingstodo.forEach(function(thing) {
+          $('.panel-body #thingstodo').append(
+            '<span class="title">' + thing + '</span><button class="btn btn-xs btn-danger remove btn-circle">x</button>'
+          )
+        })
+        break
+    }
+  }
+}
+
+// hotel, restaurants, thingstodo
+
+$(document).ready(function() {
+  console.log('===== document is ready =====');
+  //initialize_gmaps();
+
+  // variables
+  var itinerary = [{}, {}]
+  var currentDay = 1
+
+  // add to itinerary
+  $('#selection-panel').on('click', 'button', function() {
+    // get necessary information
+    var $category = $(this).siblings('h4').text().toLowerCase().split(' ').join('');
+    var $value = $(this).siblings()[1].value
+    var $newLi = '<span class="title">' + $value + '</span><button class="btn btn-xs btn-danger remove btn-circle">x</button>'
+
+    // add item to itinerary array at index $currentDay
+    // update DOM with new item
+    if ($category === 'hotels') {
+      itinerary[currentDay].hotel = $value
+      if ($('.panel-body #hotel').children().size()) {
+        $('.panel-body #hotel span').html($value)
+      } else {
+        $('.panel-body #hotel').append($newLi)
+      }
+    } else {
+      if (!itinerary[currentDay][$category]) { itinerary[currentDay][$category] = [] }
+      if (itinerary[currentDay][$category].indexOf($value) == -1) {
+        itinerary[currentDay][$category].push($value)
+        $('.panel-body #' + $category).append($newLi)
+      }
+    }
+  })
+
+  // remove from itinerary
+  $('#itinerary').on('click', 'button', function() {
+    // get necessary information
+    var $category = $(this).parent()[0].id;
+    var $value = $(this).prev().html()
+
+    // remove from DOM
+    $(this).prev().remove()
+    $(this).remove()
+
+    // remove from itinerary
+    if ($category === 'hotel') { itinerary[currentDay][$category] = '' }
+    else if (itinerary[currentDay][$category].length == 1) {
+      itinerary[currentDay][$category] = []
+    } else {
+      var i = itinerary[currentDay][$category].indexOf($value)
+      itinerary[currentDay][$category] =
+        itinerary[currentDay][$category]
+                               .slice(0,i)
+                               .concat(itinerary[currentDay][$category]
+                                 .slice(i+1))
+    }
+  })
+
+  // add/switch a day
+  $('#days').on('click', 'button', function() {
+    // add day
+    if (this.id === 'add-day') {
+      itinerary.push({})
+      currentDay++
+      $(this).siblings().removeClass('current-day')
+
+      var $day = '<button class="btn btn-circle day-btn current-day">' + currentDay + '</button>'
+
+      $(this).before($day)
+      $('#day-title span').text('Day ' + currentDay)
+      render(itinerary, currentDay)
+
+    // switch day
+    } else {
+      $(this).siblings().removeClass('current-day')
+      $(this).addClass('current-day')
+
+      var $current = parseInt($(this).html())
+      $('#day-title span').text('Day ' + $current)
+      currentDay = $current
+      render(itinerary, currentDay)
+    }
+  })
+
+  // remove a day
+  $('#remove-day').on('click', function() {
+    // variables (using currentDay instead of currentDay)
+    var $newCurrent
+    var $days = itinerary.length - 1
+
+    $('#days button').each(function() {
+      if ($(this).html() === currentDay.toString()) {
+
+        // handle removing first day
+        $newCurrent = $(this).prev().length ? $(this).prev() : $(this).next()
+
+        // handle removing first day
+        // when there is only one day
+        if ($newCurrent.html() === '+') {
+          $(this).remove()
+          $('#day-title span').text('Add a day!')
+
+        // set new current day and remove day
+        } else {
+          $newCurrent.addClass('current-day')
+          $(this).remove()
+          itinerary = itinerary.slice(0, currentDay).concat(itinerary.slice(currentDay))
+        }
+      }
+    })
+
+    // change the day-title
+    if ($days > 0) {
+      currentDay = $newCurrent.html()
+      $('#day-title span').text('Day ' + currentDay)
+    }
+
+    // reset day-buttons
+    $('day-button').each(function() {
+      this.html()
+    })
+
+// THIS IS WHERE I LEFT OFF...
+// TRYING TO FIGURE OUT HOW TO RESET DAY-BUTTONS!
+
+    render(itinerary, currentDay)
+  })
+
 
 });
