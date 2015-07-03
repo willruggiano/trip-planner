@@ -161,6 +161,7 @@ function render(itinerary, currentDay) {
   $('#itinerary button').each(function() {
     $(this).remove()
   })
+  currentDay = parseInt(currentDay)
   var dailyItinerary = itinerary[currentDay]
 
   for (var category in dailyItinerary) {
@@ -192,14 +193,15 @@ function render(itinerary, currentDay) {
 
 $(document).ready(function() {
   console.log('===== document is ready =====');
-  //initialize_gmaps();
+  initialize_gmaps();
 
   // variables
-  var itinerary = [{}, {}]
+  var itinerary = [{}]
   var currentDay = 1
 
   // add to itinerary
   $('#selection-panel').on('click', 'button', function() {
+    if (itinerary.length === 1) { itinerary.push({}) }
     // get necessary information
     var $category = $(this).siblings('h4').text().toLowerCase().split(' ').join('');
     var $value = $(this).siblings()[1].value
@@ -249,10 +251,14 @@ $(document).ready(function() {
 
   // add/switch a day
   $('#days').on('click', 'button', function() {
+    console.log(currentDay, this);
     // add day
     if (this.id === 'add-day') {
       itinerary.push({})
-      currentDay++
+
+      currentDay = parseInt(currentDay)
+      currentDay === 0 ? currentDay = 1 : currentDay++
+
       $(this).siblings().removeClass('current-day')
 
       var $day = '<button class="btn btn-circle day-btn current-day">' + currentDay + '</button>'
@@ -277,7 +283,6 @@ $(document).ready(function() {
   $('#remove-day').on('click', function() {
     // variables (using currentDay instead of currentDay)
     var $newCurrent
-    var $days = itinerary.length - 1
 
     $('#days button').each(function() {
       if ($(this).html() === currentDay.toString()) {
@@ -287,33 +292,28 @@ $(document).ready(function() {
 
         // handle removing first day
         // when there is only one day
-        if ($newCurrent.html() === '+') {
+        if ($newCurrent.html() == '+') {
           $(this).remove()
           $('#day-title span').text('Add a day!')
-
         // set new current day and remove day
         } else {
           $newCurrent.addClass('current-day')
           $(this).remove()
-          itinerary = itinerary.slice(0, currentDay).concat(itinerary.slice(currentDay))
+          itinerary = itinerary.slice(0, currentDay).concat(itinerary.slice(currentDay+1))
         }
       }
     })
 
+    // reset day-buttons
+    $('.day-btn').not( document.getElementById('add-day') ).each(function(i) {
+      $(this).html(i+1)
+    })
+
     // change the day-title
-    if ($days > 0) {
+    if (itinerary.length - 1 > 0) {
       currentDay = $newCurrent.html()
       $('#day-title span').text('Day ' + currentDay)
     }
-
-    // reset day-buttons
-    $('day-button').each(function() {
-      this.html()
-    })
-
-// THIS IS WHERE I LEFT OFF...
-// TRYING TO FIGURE OUT HOW TO RESET DAY-BUTTONS!
-
     render(itinerary, currentDay)
   })
 
