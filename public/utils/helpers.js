@@ -191,7 +191,8 @@ function render(itinerary, currentDay) {
 // hotel, restaurants, thingstodo
 
 $(document).ready(function() {
-  initialize_gmaps();
+  console.log('===== document is ready =====');
+  //initialize_gmaps();
 
   // variables
   var itinerary = [{}, {}]
@@ -206,47 +207,52 @@ $(document).ready(function() {
 
     // add item to itinerary array at index $currentDay
     // update DOM with new item
-    switch ($category) {
-      case 'hotels':
-        itinerary[currentDay].hotel = $value
-        if ($('.panel-body #hotel').children().size()) {
-          $('.panel-body #hotel span').html($value)
-        } else {
-          $('.panel-body #hotel').append($newLi)
-        }
-        break
-      case 'restaurants':
-        if (!itinerary[currentDay].restaurants) { itinerary[currentDay].restaurants = [] }
-        if (itinerary[currentDay].restaurants.indexOf($value) >= 0) break
-        itinerary[currentDay].restaurants.push($value)
-        $('.panel-body #restaurants').append($newLi)
-        break
-      case 'thingstodo':
-        if (!itinerary[currentDay].thingstodo) { itinerary[currentDay].thingstodo = [] }
-        if (itinerary[currentDay].thingstodo.indexOf($value) >= 0) break
-        itinerary[currentDay].thingstodo.push($value)
-        $('.panel-body #thingstodo').append($newLi)
-        break
+    if ($category === 'hotels') {
+      itinerary[currentDay].hotel = $value
+      if ($('.panel-body #hotel').children().size()) {
+        $('.panel-body #hotel span').html($value)
+      } else {
+        $('.panel-body #hotel').append($newLi)
+      }
+    } else {
+      if (!itinerary[currentDay][$category]) { itinerary[currentDay][$category] = [] }
+      if (itinerary[currentDay][$category].indexOf($value) == -1) {
+        itinerary[currentDay][$category].push($value)
+        $('.panel-body #' + $category).append($newLi)
+      }
     }
   })
-
 
   // remove from itinerary
   $('#itinerary').on('click', 'button', function() {
     // get necessary information
-    var $category = $(this).siblings('h4').text().toLowerCase().split(' ').join('');
-    var $value = $(this).siblings()[1].value
+    var $category = $(this).parent()[0].id;
+    var $value = $(this).prev().html()
 
+    // remove from DOM
     $(this).prev().remove()
     $(this).remove()
+
+    // remove from itinerary
+    if ($category === 'hotel') { itinerary[currentDay][$category] = '' }
+    else if (itinerary[currentDay][$category].length == 1) {
+      itinerary[currentDay][$category] = []
+    } else {
+      var i = itinerary[currentDay][$category].indexOf($value)
+      itinerary[currentDay][$category] =
+        itinerary[currentDay][$category]
+                               .slice(0,i)
+                               .concat(itinerary[currentDay][$category]
+                                 .slice(i+1))
+    }
   })
 
   // add/switch a day
   $('#days').on('click', 'button', function() {
+    // add day
     if (this.id === 'add-day') {
       itinerary.push({})
       currentDay++
-      console.log(currentDay, itinerary);
       $(this).siblings().removeClass('current-day')
 
       var $day = '<button class="btn btn-circle day-btn current-day">' + currentDay + '</button>'
@@ -255,38 +261,60 @@ $(document).ready(function() {
       $('#day-title span').text('Day ' + currentDay)
       render(itinerary, currentDay)
 
-  } else {
+    // switch day
+    } else {
       $(this).siblings().removeClass('current-day')
       $(this).addClass('current-day')
 
-      var $current = $(this).html()
+      var $current = parseInt($(this).html())
       $('#day-title span').text('Day ' + $current)
+      currentDay = $current
+      render(itinerary, currentDay)
     }
   })
 
   // remove a day
   $('#remove-day').on('click', function() {
-    var $num = $('#day-title span').text().match(/\d+/)[0]
+    // variables (using currentDay instead of currentDay)
     var $newCurrent
+    var $days = itinerary.length - 1
+
     $('#days button').each(function() {
-      if ($(this).html() === $num.toString()) {
+      if ($(this).html() === currentDay.toString()) {
+
+        // handle removing first day
         $newCurrent = $(this).prev().length ? $(this).prev() : $(this).next()
+
+        // handle removing first day
+        // when there is only one day
         if ($newCurrent.html() === '+') {
-          console.log('no days left');
           $(this).remove()
           $('#day-title span').text('Add a day!')
-          days = 0
+
+        // set new current day and remove day
         } else {
           $newCurrent.addClass('current-day')
           $(this).remove()
-          days--
+          itinerary = itinerary.slice(0, currentDay).concat(itinerary.slice(currentDay))
         }
       }
     })
-    if (days !== 0) {
-      $num = $newCurrent.html()
-      $('#day-title span').text('Day ' + $num)
+
+    // change the day-title
+    if ($days > 0) {
+      currentDay = $newCurrent.html()
+      $('#day-title span').text('Day ' + currentDay)
     }
+
+    // reset day-buttons
+    $('day-button').each(function() {
+      this.html()
+    })
+
+// THIS IS WHERE I LEFT OFF...
+// TRYING TO FIGURE OUT HOW TO RESET DAY-BUTTONS!
+
+    render(itinerary, currentDay)
   })
 
 
