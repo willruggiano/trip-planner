@@ -1,4 +1,6 @@
 // google maps initialization
+var map
+var markerArr = []
 function initialize_gmaps() {
     // initialize new google maps LatLng object
     var myLatlng = new google.maps.LatLng(40.705786,-74.007672);
@@ -6,142 +8,28 @@ function initialize_gmaps() {
     var mapOptions = {
         center: myLatlng,
         zoom: 14,
-        mapTypeId: google.maps.MapTypeId.ROADMAP,
-        styles: styleArr
+        mapTypeId: google.maps.MapTypeId.ROADMAP
     };
     // get the maps div's HTML obj
     var map_canvas_obj = document.getElementById("map-canvas");
     // initialize a new Google Map with the options
-    var map = new google.maps.Map(map_canvas_obj, mapOptions);
+    map = new google.maps.Map(map_canvas_obj, mapOptions);
     // Add the marker to the map
     var marker = new google.maps.Marker({
         position: myLatlng,
         title:"Hello World!"
     });
-
-    // draw some locations
-    var hotelLocation = [];
-    var restaurantLocations = [];
-    var thingToDoLocations = [];
-
-    function drawLocation (location, opts) {
-        if (typeof opts !== 'object') {
-            opts = {}
-        }
-        opts.position = new google.maps.LatLng(location[0], location[1]);
-        opts.map = map;
-        var marker = new google.maps.Marker(opts);
-    }
-    drawLocation(hotelLocation, {
-        icon: '/images/lodging_0star.png'
-    });
-    restaurantLocations.forEach(function (loc) {
-        drawLocation(loc, {
-            icon: '/images/restaurant.png'
-        });
-    });
-    thingToDoLocations.forEach(function (loc) {
-        drawLocation(loc, {
-            icon: '/images/star-3.png'
-        });
-    });
 }
 
-var styleArr = [
-    {
-        "featureType": "landscape",
-        "stylers": [
-            {
-                "saturation": -100
-            },
-            {
-                "lightness": 60
-            }
-        ]
-    },
-    {
-        "featureType": "road.local",
-        "stylers": [
-            {
-                "saturation": -100
-            },
-            {
-                "lightness": 40
-            },
-            {
-                "visibility": "on"
-            }
-        ]
-    },
-    {
-        "featureType": "transit",
-        "stylers": [
-            {
-                "saturation": -100
-            },
-            {
-                "visibility": "simplified"
-            }
-        ]
-    },
-    {
-        "featureType": "administrative.province",
-        "stylers": [
-            {
-                "visibility": "off"
-            }
-        ]
-    },
-    {
-        "featureType": "water",
-        "stylers": [
-            {
-                "visibility": "on"
-            },
-            {
-                "lightness": 30
-            }
-        ]
-    },
-    {
-        "featureType": "road.highway",
-        "elementType": "geometry.fill",
-        "stylers": [
-            {
-                "color": "#ef8c25"
-            },
-            {
-                "lightness": 40
-            }
-        ]
-    },
-    {
-        "featureType": "road.highway",
-        "elementType": "geometry.stroke",
-        "stylers": [
-            {
-                "visibility": "off"
-            }
-        ]
-    },
-    {
-        "featureType": "poi.park",
-        "elementType": "geometry.fill",
-        "stylers": [
-            {
-                "color": "#b6c54c"
-            },
-            {
-                "lightness": 40
-            },
-            {
-                "saturation": -40
-            }
-        ]
-    },
-    {}
-]
-
+function drawLocation (location, opts) {
+    if (typeof opts !== 'object') {
+        opts = {}
+    }
+    opts.position = new google.maps.LatLng(location[0], location[1]);
+    opts.map = map;
+    var marker = new google.maps.Marker(opts);
+    markerArr.push(marker)
+}
 /*
   Select and set the hotel
   Select and add a restaurant
@@ -154,7 +42,15 @@ var styleArr = [
   Switch days
 */
 
+function setAllMap(map) {
+  for (var i = 0; i < markerArr.length; i++) {
+    markerArr[i].setMap(map);
+  }
+}
+
 function render(itinerary, currentDay) {
+  setAllMap(null)
+
   $('#itinerary span').each(function() {
     $(this).remove()
   })
@@ -165,28 +61,27 @@ function render(itinerary, currentDay) {
   var dailyItinerary = itinerary[currentDay]
 
   for (var category in dailyItinerary) {
-    switch (category) {
-      case 'hotel':
-        $('.panel-body #hotel').append(
-          '<span class="title">' + dailyItinerary.hotel + '</span><button class="btn btn-xs btn-danger remove btn-circle">x</button>'
-        )
-        break
-      case 'restaurants':
-        dailyItinerary.restaurants.forEach(function(restaurant) {
-          $('.panel-body #restaurants').append(
-            '<span class="title">' + restaurant + '</span><button class="btn btn-xs btn-danger remove btn-circle">x</button>'
-          )
+    var opts = {icon: '/images/' + category + '.png'}
+    if (category !== 'hotel') {
+      if (dailyItinerary[category]) {
+        dailyItinerary[category].forEach(function(item){
+          $('.panel-body #' + category).append('<span class="title">' + item.name + '</span><button class="btn btn-xs btn-danger remove btn-circle">x</button>')
+          drawLocation(item.place[0].location, opts)
         })
-        break
-      case 'thingstodo':
-        dailyItinerary.thingstodo.forEach(function(thing) {
-          $('.panel-body #thingstodo').append(
-            '<span class="title">' + thing + '</span><button class="btn btn-xs btn-danger remove btn-circle">x</button>'
-          )
-        })
-        break
+      }
+    } else {
+      if (dailyItinerary[category]) {
+        $('.panel-body #' + category).append('<span class="title">' + dailyItinerary[category].name + '</span><button class="btn btn-xs btn-danger remove btn-circle">x</button>')
+        drawLocation(dailyItinerary[category].place[0].location, opts)
+      }
     }
   }
+
+  var bounds = new google.maps.LatLngBounds();
+  markerArr.forEach(function(marker) {
+    bounds.extend(marker.position);
+  })
+  map.fitBounds(bounds);
 }
 
 // hotel, restaurants, thingstodo
@@ -210,7 +105,11 @@ $(document).ready(function() {
     // add item to itinerary array at index $currentDay
     // update DOM with new item
     if ($category === 'hotels') {
-      itinerary[currentDay].hotel = $value
+      all_hotels.forEach(function(hotel) {
+        if (hotel.name === $value) {
+          itinerary[currentDay].hotel = hotel
+        }
+      })
       if ($('.panel-body #hotel').children().size()) {
         $('.panel-body #hotel span').html($value)
       } else {
@@ -218,11 +117,28 @@ $(document).ready(function() {
       }
     } else {
       if (!itinerary[currentDay][$category]) { itinerary[currentDay][$category] = [] }
-      if (itinerary[currentDay][$category].indexOf($value) == -1) {
-        itinerary[currentDay][$category].push($value)
+      var exists
+      itinerary[currentDay][$category].forEach(function(item) {
+        if (item.name === $value) { exists = true }
+      })
+      if (!exists) {
+        if ($category === 'thingstodo') {
+          all_things_to_do.forEach(function(thing) {
+            if (thing.name === $value) {
+              itinerary[currentDay][$category].push(thing)
+            }
+          })
+        } else {
+          all_restaurants.forEach(function(restaurant) {
+            if (restaurant.name === $value) {
+              itinerary[currentDay][$category].push(restaurant)
+            }
+          })
+        }
         $('.panel-body #' + $category).append($newLi)
       }
     }
+    render(itinerary, currentDay)
   })
 
   // remove from itinerary
@@ -236,7 +152,9 @@ $(document).ready(function() {
     $(this).remove()
 
     // remove from itinerary
-    if ($category === 'hotel') { itinerary[currentDay][$category] = '' }
+    if ($category === 'hotel') {
+      itinerary[currentDay][$category] = ''
+    }
     else if (itinerary[currentDay][$category].length == 1) {
       itinerary[currentDay][$category] = []
     } else {
@@ -247,6 +165,7 @@ $(document).ready(function() {
                                .concat(itinerary[currentDay][$category]
                                  .slice(i+1))
     }
+    render(itinerary, currentDay)
   })
 
   // add/switch a day

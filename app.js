@@ -5,6 +5,7 @@ var express = require('express'),
 	sassMiddleware = require('node-sass-middleware');
 
 var app = express();
+module.exports = app;
 
 // set up rendering with swig
 app.set('views', __dirname + '/views');
