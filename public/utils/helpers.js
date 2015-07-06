@@ -196,7 +196,7 @@ $(document).ready(function() {
   initialize_gmaps();
 
   // variables
-  var itinerary = [{}]
+  var itinerary = [{}, {}]
   var currentDay = 1
 
   // add to itinerary
@@ -251,13 +251,13 @@ $(document).ready(function() {
 
   // add/switch a day
   $('#days').on('click', 'button', function() {
-    console.log(currentDay, this);
     // add day
     if (this.id === 'add-day') {
       itinerary.push({})
 
       currentDay = parseInt(currentDay)
       currentDay === 0 ? currentDay = 1 : currentDay++
+      currentDay = itinerary.length-1
 
       $(this).siblings().removeClass('current-day')
 
